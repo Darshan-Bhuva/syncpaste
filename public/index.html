@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PasteSync — Instant Clipboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --border: #1e1e2e;
+      --accent: #00ff88;
+      --accent2: #7c3aed;
+      --text: #e8e8f0;
+      --muted: #555570;
+      --error: #ff4466;
+      --font-display: 'Syne', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-display);
+      overflow-x: hidden;
+    }
+
+    /* Animated background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: -40%;
+      left: -20%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(0,255,136,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+      animation: drift 12s ease-in-out infinite alternate;
+    }
+
+    @keyframes drift {
+      from { transform: translate(0, 0); }
+      to { transform: translate(15%, 10%); }
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Header */
+    header {
+      padding: 36px 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .logo-text {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+
+    .logo-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+      display: inline-block;
+      margin-left: 2px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: var(--font-mono);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: all 0.3s;
+    }
+
+    .status-dot.connected {
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    .status-dot.disconnected {
+      background: var(--error);
+    }
+
+    .clients-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .clients-badge span {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Main */
+    main {
+      flex: 1;
+      padding: 40px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .intro {
+      font-size: 13px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      letter-spacing: 0.04em;
+    }
+
+    .intro strong {
+      color: var(--accent);
+    }
+
+    /* Type toggle */
+    .type-toggle {
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px;
+      width: fit-content;
+    }
+
+    .type-btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--muted);
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.02em;
+    }
+
+    .type-btn.active {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .type-btn:hover:not(.active) {
+      color: var(--text);
+    }
+
+    /* Editor area */
+    .editor-wrap {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--surface);
+      transition: border-color 0.3s;
+    }
+
+    .editor-wrap:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 0 40px rgba(0,255,136,0.05);
+    }
+
+    .editor-wrap.incoming {
+      border-color: var(--accent2);
+      box-shadow: 0 0 0 1px var(--accent2), 0 0 40px rgba(124,58,237,0.08);
+      animation: incoming-flash 0.6s ease;
+    }
+
+    @keyframes incoming-flash {
+      0% { background: rgba(124,58,237,0.12); }
+      100% { background: var(--surface); }
+    }
+
+    .editor-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .editor-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: var(--font-mono);
+    }
+
+    .editor-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-icon {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.04em;
+    }
+
+    .btn-icon:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-icon.success {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    textarea, .code-area {
+      width: 100%;
+      min-height: 280px;
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: vertical;
+      padding: 20px;
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text);
+    }
+
+    textarea {
+      font-family: var(--font-display);
+    }
+
+    .code-area {
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      tab-size: 2;
+    }
+
+    textarea::placeholder, .code-area::placeholder {
+      color: var(--muted);
+      opacity: 0.6;
+    }
+
+    /* Char count */
+    .editor-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .char-count {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .sync-indicator {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .sync-indicator.visible {
+      opacity: 1;
+    }
+
+    .sync-indicator::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 1s infinite;
+    }
+
+    /* Send button */
+    .send-btn {
+      width: 100%;
+      padding: 16px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 12px;
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .send-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .send-btn:hover::before { opacity: 1; }
+    .send-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,255,136,0.25); }
+    .send-btn:active { transform: translateY(0); }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* Activity log */
+    .activity {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .activity-header {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: var(--font-mono);
+    }
+
+    .activity-list {
+      max-height: 120px;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .activity-list::-webkit-scrollbar { width: 4px; }
+    .activity-list::-webkit-scrollbar-track { background: transparent; }
+    .activity-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .activity-item {
+      padding: 6px 18px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slide-in 0.3s ease;
+    }
+
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateX(-8px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .activity-item .time {
+      color: var(--accent);
+      min-width: 60px;
+    }
+
+    .activity-item .msg { color: var(--text); opacity: 0.7; }
+
+    /* Footer */
+    footer {
+      padding: 20px 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      letter-spacing: 0.06em;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 999;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width: 600px) {
+      header { flex-direction: column; align-items: flex-start; gap: 16px; }
+      .toast { bottom: 16px; right: 16px; left: 16px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">
+      <span class="logo-text">PasteSync<span class="logo-dot"></span></span>
+    </div>
+    <div class="status-bar">
+      <div class="connection-status">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Connecting</span>
+      </div>
+      <div class="clients-badge"><span id="clientCount">0</span> online</div>
+    </div>
+  </header>
+
+  <main>
+    <p class="intro">Type or paste anything — it syncs <strong>instantly</strong> to all open devices. No account. No storage.</p>
+
+    <div class="type-toggle">
+      <button class="type-btn active" onclick="setType('text')" id="btnText">Text</button>
+      <button class="type-btn" onclick="setType('code')" id="btnCode">Code</button>
+    </div>
+
+    <div class="editor-wrap" id="editorWrap">
+      <div class="editor-header">
+        <span class="editor-label" id="editorLabel">Plain Text</span>
+        <div class="editor-actions">
+          <button class="btn-icon" onclick="clearAll()" id="clearBtn">Clear</button>
+          <button class="btn-icon" onclick="copyToClipboard()" id="copyBtn">Copy</button>
+        </div>
+      </div>
+      <textarea
+        id="textArea"
+        placeholder="Start typing or paste something here... it will appear on all connected devices instantly."
+        oninput="onInput()"
+        onkeydown="handleKeydown(event)"
+      ></textarea>
+      <div class="editor-footer">
+        <span class="char-count"><span id="charCount">0</span> chars</span>
+        <span class="sync-indicator" id="syncIndicator">syncing...</span>
+      </div>
+    </div>
+
+    <button class="send-btn" onclick="sendNow()" id="sendBtn">
+      ⚡ Sync to All Devices
+    </button>
+
+    <div class="activity">
+      <div class="activity-header">Activity</div>
+      <div class="activity-list" id="activityList">
+        <div class="activity-item">
+          <span class="time">--:--:--</span>
+          <span class="msg">Waiting for activity...</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>PASTESYNC — REAL-TIME · NO DATABASE · NO ACCOUNT</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+  let currentType = 'text';
+  let syncTimer = null;
+  let isIncoming = false;
+
+  const textArea = document.getElementById('textArea');
+  const editorWrap = document.getElementById('editorWrap');
+  const syncIndicator = document.getElementById('syncIndicator');
+  const charCount = document.getElementById('charCount');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const clientCount = document.getElementById('clientCount');
+  const activityList = document.getElementById('activityList');
+
+  // Socket events
+  socket.on('connect', () => {
+    statusDot.className = 'status-dot connected';
+    statusText.textContent = 'Connected';
+    addActivity('Connected to sync server');
+  });
+
+  socket.on('disconnect', () => {
+    statusDot.className = 'status-dot disconnected';
+    statusText.textContent = 'Disconnected';
+    addActivity('Disconnected');
+  });
+
+  socket.on('clients', (count) => {
+    clientCount.textContent = count;
+  });
+
+  socket.on('clipboard:sync', (data) => {
+    if (!data.text && data.text !== '') return;
+    isIncoming = true;
+
+    // Update type if different
+    if (data.type && data.type !== currentType) {
+      setType(data.type, true);
+    }
+
+    textArea.value = data.text;
+    charCount.textContent = data.text.length;
+
+    // Flash incoming animation
+    editorWrap.classList.add('incoming');
+    setTimeout(() => editorWrap.classList.remove('incoming'), 600);
+
+    addActivity(`Received ${data.type === 'code' ? 'code' : 'text'} — ${data.text.length} chars`);
+    showToast('📥 Clipboard updated from another device');
+
+    isIncoming = false;
+  });
+
+  // Auto-sync as user types (debounced)
+  function onInput() {
+    charCount.textContent = textArea.value.length;
+
+    if (isIncoming) return;
+
+    // Show syncing indicator
+    syncIndicator.classList.add('visible');
+    syncIndicator.textContent = 'typing...';
+
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+      syncToAll();
+    }, 800); // sync 800ms after user stops typing
+  }
+
+  function syncToAll() {
+    socket.emit('clipboard:update', {
+      text: textArea.value,
+      type: currentType
+    });
+    syncIndicator.textContent = 'synced ✓';
+    setTimeout(() => syncIndicator.classList.remove('visible'), 2000);
+    addActivity(`Sent ${currentType === 'code' ? 'code' : 'text'} — ${textArea.value.length} chars`);
+  }
+
+  function sendNow() {
+    syncToAll();
+    showToast('⚡ Synced to all devices!');
+  }
+
+  function setType(type, silent = false) {
+    currentType = type;
+    document.getElementById('btnText').classList.toggle('active', type === 'text');
+    document.getElementById('btnCode').classList.toggle('active', type === 'code');
+    document.getElementById('editorLabel').textContent = type === 'code' ? 'Code Snippet' : 'Plain Text';
+    textArea.style.fontFamily = type === 'code' ? "'JetBrains Mono', monospace" : "'Syne', sans-serif";
+    textArea.style.fontSize = type === 'code' ? '13.5px' : '15px';
+    textArea.placeholder = type === 'code'
+      ? '// Paste your code here...\nfunction hello() { return "world"; }'
+      : 'Start typing or paste something here... it will appear on all connected devices instantly.';
+  }
+
+  function clearAll() {
+    textArea.value = '';
+    charCount.textContent = '0';
+    syncToAll();
+    showToast('🗑️ Cleared on all devices');
+  }
+
+  async function copyToClipboard() {
+    if (!textArea.value) return;
+    try {
+      await navigator.clipboard.writeText(textArea.value);
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = 'Copied!';
+      btn.classList.add('success');
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        btn.classList.remove('success');
+      }, 2000);
+    } catch {
+      showToast('❌ Copy failed');
+    }
+  }
+
+  // Cmd/Ctrl+Enter to sync
+  function handleKeydown(e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      sendNow();
+    }
+  }
+
+  function addActivity(msg) {
+    const now = new Date();
+    const time = now.toTimeString().slice(0, 8);
+
+    // Remove placeholder
+    const placeholder = activityList.querySelector('.activity-item');
+    if (placeholder && placeholder.querySelector('.time').textContent === '--:--:--') {
+      placeholder.remove();
+    }
+
+    const item = document.createElement('div');
+    item.className = 'activity-item';
+    item.innerHTML = `<span class="time">${time}</span><span class="msg">${msg}</span>`;
+    activityList.insertBefore(item, activityList.firstChild);
+
+    // Keep only last 10
+    while (activityList.children.length > 10) {
+      activityList.removeChild(activityList.lastChild);
+    }
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>
