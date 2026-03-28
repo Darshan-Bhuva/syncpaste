@@ -29,7 +29,6 @@
       overflow-x: hidden;
     }
 
-    /* Animated background grid */
     body::before {
       content: '';
       position: fixed;
@@ -61,6 +60,159 @@
       to { transform: translate(15%, 10%); }
     }
 
+    /* ─── ROOM GATE ─── */
+    #roomGate {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      padding: 24px;
+    }
+
+    .gate-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+      animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes pop-in {
+      from { opacity: 0; transform: scale(0.9) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .gate-logo {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .gate-logo span {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
+      margin-left: 3px;
+      vertical-align: middle;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .gate-title {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .gate-title strong {
+      color: var(--accent);
+    }
+
+    .gate-input-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .gate-input-wrap label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: var(--font-mono);
+    }
+
+    .gate-input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .gate-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-family: var(--font-mono);
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+      letter-spacing: 0.05em;
+    }
+
+    .gate-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    .gate-input::placeholder {
+      color: var(--muted);
+      opacity: 0.5;
+    }
+
+    .gate-btn {
+      padding: 12px 20px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .gate-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0,255,136,0.3);
+    }
+
+    .gate-random {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .gate-random:hover {
+      border-color: var(--accent2);
+      color: var(--accent2);
+    }
+
+    .gate-hint {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      line-height: 1.6;
+    }
+
+    /* ─── MAIN APP ─── */
     .app {
       position: relative;
       z-index: 1;
@@ -70,15 +222,20 @@
       max-width: 860px;
       margin: 0 auto;
       padding: 0 24px;
+      opacity: 0;
+      transition: opacity 0.4s;
     }
 
-    /* Header */
+    .app.visible { opacity: 1; }
+
     header {
       padding: 36px 0 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 12px;
     }
 
     .logo {
@@ -91,7 +248,6 @@
       font-size: 22px;
       font-weight: 800;
       letter-spacing: -0.5px;
-      color: var(--text);
     }
 
     .logo-dot {
@@ -105,16 +261,41 @@
       margin-left: 2px;
     }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.8); }
-    }
-
-    .status-bar {
+    .header-right {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 10px;
+      flex-wrap: wrap;
     }
+
+    .room-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--accent2);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent2);
+    }
+
+    .room-badge .room-icon { font-size: 10px; opacity: 0.7; }
+
+    .leave-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .leave-btn:hover { border-color: var(--error); color: var(--error); }
 
     .connection-status {
       display: flex;
@@ -136,14 +317,8 @@
       transition: all 0.3s;
     }
 
-    .status-dot.connected {
-      background: var(--accent);
-      box-shadow: 0 0 8px var(--accent);
-    }
-
-    .status-dot.disconnected {
-      background: var(--error);
-    }
+    .status-dot.connected { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .status-dot.disconnected { background: var(--error); }
 
     .clients-badge {
       font-family: var(--font-mono);
@@ -155,12 +330,8 @@
       border-radius: 20px;
     }
 
-    .clients-badge span {
-      color: var(--accent);
-      font-weight: 600;
-    }
+    .clients-badge span { color: var(--accent); font-weight: 600; }
 
-    /* Main */
     main {
       flex: 1;
       padding: 40px 0;
@@ -176,11 +347,8 @@
       letter-spacing: 0.04em;
     }
 
-    .intro strong {
-      color: var(--accent);
-    }
+    .intro strong { color: var(--accent); }
 
-    /* Type toggle */
     .type-toggle {
       display: flex;
       gap: 4px;
@@ -205,16 +373,9 @@
       letter-spacing: 0.02em;
     }
 
-    .type-btn.active {
-      background: var(--accent);
-      color: #000;
-    }
+    .type-btn.active { background: var(--accent); color: #000; }
+    .type-btn:hover:not(.active) { color: var(--text); }
 
-    .type-btn:hover:not(.active) {
-      color: var(--text);
-    }
-
-    /* Editor area */
     .editor-wrap {
       position: relative;
       border: 1px solid var(--border);
@@ -257,10 +418,7 @@
       font-family: var(--font-mono);
     }
 
-    .editor-actions {
-      display: flex;
-      gap: 8px;
-    }
+    .editor-actions { display: flex; gap: 8px; }
 
     .btn-icon {
       background: transparent;
@@ -276,17 +434,10 @@
       letter-spacing: 0.04em;
     }
 
-    .btn-icon:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
+    .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-icon.success { border-color: var(--accent); color: var(--accent); }
 
-    .btn-icon.success {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    textarea, .code-area {
+    textarea {
       width: 100%;
       min-height: 280px;
       background: transparent;
@@ -297,24 +448,16 @@
       font-size: 15px;
       line-height: 1.7;
       color: var(--text);
-    }
-
-    textarea {
       font-family: var(--font-display);
     }
 
-    .code-area {
+    textarea.code-mode {
       font-family: var(--font-mono);
       font-size: 13.5px;
-      tab-size: 2;
     }
 
-    textarea::placeholder, .code-area::placeholder {
-      color: var(--muted);
-      opacity: 0.6;
-    }
+    textarea::placeholder { color: var(--muted); opacity: 0.6; }
 
-    /* Char count */
     .editor-footer {
       display: flex;
       align-items: center;
@@ -323,11 +466,7 @@
       border-top: 1px solid var(--border);
     }
 
-    .char-count {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--muted);
-    }
+    .char-count { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
 
     .sync-indicator {
       font-family: var(--font-mono);
@@ -340,9 +479,7 @@
       transition: opacity 0.3s;
     }
 
-    .sync-indicator.visible {
-      opacity: 1;
-    }
+    .sync-indicator.visible { opacity: 1; }
 
     .sync-indicator::before {
       content: '';
@@ -353,7 +490,6 @@
       animation: pulse 1s infinite;
     }
 
-    /* Send button */
     .send-btn {
       width: 100%;
       padding: 16px;
@@ -385,7 +521,6 @@
     .send-btn:active { transform: translateY(0); }
     .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-    /* Activity log */
     .activity {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -430,14 +565,9 @@
       to { opacity: 1; transform: translateX(0); }
     }
 
-    .activity-item .time {
-      color: var(--accent);
-      min-width: 60px;
-    }
-
+    .activity-item .time { color: var(--accent); min-width: 60px; }
     .activity-item .msg { color: var(--text); opacity: 0.7; }
 
-    /* Footer */
     footer {
       padding: 20px 0;
       border-top: 1px solid var(--border);
@@ -448,7 +578,6 @@
       letter-spacing: 0.06em;
     }
 
-    /* Toast */
     .toast {
       position: fixed;
       bottom: 32px;
@@ -468,24 +597,53 @@
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
 
-    .toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
+    .toast.show { transform: translateY(0); opacity: 1; }
 
     @media (max-width: 600px) {
-      header { flex-direction: column; align-items: flex-start; gap: 16px; }
+      header { flex-direction: column; align-items: flex-start; }
       .toast { bottom: 16px; right: 16px; left: 16px; }
     }
   </style>
 </head>
 <body>
-<div class="app">
+
+<!-- Room Gate -->
+<div id="roomGate">
+  <div class="gate-box">
+    <div class="gate-logo">PasteSync<span></span></div>
+    <p class="gate-title">Enter a <strong>room code</strong> to create or join a private clipboard. Anyone with the same code sees the same content.</p>
+    <div class="gate-input-wrap">
+      <label>Room Code</label>
+      <div class="gate-input-row">
+        <input
+          class="gate-input"
+          id="roomInput"
+          type="text"
+          placeholder="e.g. myroom123"
+          maxlength="32"
+          onkeydown="if(event.key==='Enter') joinRoom()"
+          autofocus
+        />
+        <button class="gate-btn" onclick="joinRoom()">Join →</button>
+      </div>
+    </div>
+    <button class="gate-random" onclick="randomRoom()">🎲 Generate random room code</button>
+    <p class="gate-hint">Only letters, numbers, hyphens allowed. Room is deleted when everyone leaves.</p>
+  </div>
+</div>
+
+<!-- Main App -->
+<div class="app" id="mainApp">
   <header>
     <div class="logo">
       <span class="logo-text">PasteSync<span class="logo-dot"></span></span>
     </div>
-    <div class="status-bar">
+    <div class="header-right">
+      <div class="room-badge">
+        <span class="room-icon">🔑</span>
+        <span id="roomLabel">—</span>
+      </div>
+      <button class="leave-btn" onclick="leaveRoom()">Leave</button>
       <div class="connection-status">
         <div class="status-dot" id="statusDot"></div>
         <span id="statusText">Connecting</span>
@@ -495,7 +653,7 @@
   </header>
 
   <main>
-    <p class="intro">Type or paste anything — it syncs <strong>instantly</strong> to all open devices. No account. No storage.</p>
+    <p class="intro">Room: <strong id="introRoom">—</strong> — Type or paste anything, it syncs instantly to everyone in this room.</p>
 
     <div class="type-toggle">
       <button class="type-btn active" onclick="setType('text')" id="btnText">Text</button>
@@ -506,13 +664,13 @@
       <div class="editor-header">
         <span class="editor-label" id="editorLabel">Plain Text</span>
         <div class="editor-actions">
-          <button class="btn-icon" onclick="clearAll()" id="clearBtn">Clear</button>
+          <button class="btn-icon" onclick="clearAll()">Clear</button>
           <button class="btn-icon" onclick="copyToClipboard()" id="copyBtn">Copy</button>
         </div>
       </div>
       <textarea
         id="textArea"
-        placeholder="Start typing or paste something here... it will appear on all connected devices instantly."
+        placeholder="Start typing or paste something here..."
         oninput="onInput()"
         onkeydown="handleKeydown(event)"
       ></textarea>
@@ -522,9 +680,7 @@
       </div>
     </div>
 
-    <button class="send-btn" onclick="sendNow()" id="sendBtn">
-      ⚡ Sync to All Devices
-    </button>
+    <button class="send-btn" onclick="sendNow()">⚡ Sync to All Devices</button>
 
     <div class="activity">
       <div class="activity-header">Activity</div>
@@ -537,7 +693,7 @@
     </div>
   </main>
 
-  <footer>PASTESYNC — REAL-TIME · NO DATABASE · NO ACCOUNT</footer>
+  <footer>PASTESYNC — PRIVATE ROOMS · REAL-TIME · NO DATABASE</footer>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -548,6 +704,7 @@
   let currentType = 'text';
   let syncTimer = null;
   let isIncoming = false;
+  let currentRoom = null;
 
   const textArea = document.getElementById('textArea');
   const editorWrap = document.getElementById('editorWrap');
@@ -558,11 +715,57 @@
   const clientCount = document.getElementById('clientCount');
   const activityList = document.getElementById('activityList');
 
-  // Socket events
+  // ── Room logic ──
+  function joinRoom() {
+    const input = document.getElementById('roomInput');
+    const code = input.value.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '');
+    if (!code) { input.focus(); showToast('❌ Enter a room code first'); return; }
+
+    currentRoom = code;
+    socket.emit('room:join', code);
+
+    document.getElementById('roomLabel').textContent = code;
+    document.getElementById('introRoom').textContent = code;
+
+    // Hide gate, show app
+    document.getElementById('roomGate').style.display = 'none';
+    document.getElementById('mainApp').classList.add('visible');
+
+    addActivity(`Joined room: ${code}`);
+
+    // Save to session so refresh keeps room
+    sessionStorage.setItem('room', code);
+  }
+
+  function leaveRoom() {
+    sessionStorage.removeItem('room');
+    location.reload();
+  }
+
+  function randomRoom() {
+    const words = ['swift','cloud','neon','echo','pixel','wave','spark','forge','delta','nova'];
+    const w1 = words[Math.floor(Math.random() * words.length)];
+    const w2 = words[Math.floor(Math.random() * words.length)];
+    const num = Math.floor(Math.random() * 900) + 100;
+    document.getElementById('roomInput').value = `${w1}-${w2}-${num}`;
+  }
+
+  // Auto-rejoin on refresh
+  window.addEventListener('load', () => {
+    const saved = sessionStorage.getItem('room');
+    if (saved) {
+      document.getElementById('roomInput').value = saved;
+      joinRoom();
+    }
+  });
+
+  // ── Socket events ──
   socket.on('connect', () => {
     statusDot.className = 'status-dot connected';
     statusText.textContent = 'Connected';
-    addActivity('Connected to sync server');
+    // Rejoin room on reconnect
+    if (currentRoom) socket.emit('room:join', currentRoom);
+    addActivity('Connected');
   });
 
   socket.on('disconnect', () => {
@@ -576,48 +779,38 @@
   });
 
   socket.on('clipboard:sync', (data) => {
-    if (!data.text && data.text !== '') return;
+    if (data.text === undefined) return;
     isIncoming = true;
 
-    // Update type if different
-    if (data.type && data.type !== currentType) {
-      setType(data.type, true);
-    }
+    if (data.type && data.type !== currentType) setType(data.type, true);
 
     textArea.value = data.text;
     charCount.textContent = data.text.length;
 
-    // Flash incoming animation
     editorWrap.classList.add('incoming');
     setTimeout(() => editorWrap.classList.remove('incoming'), 600);
 
-    addActivity(`Received ${data.type === 'code' ? 'code' : 'text'} — ${data.text.length} chars`);
-    showToast('📥 Clipboard updated from another device');
+    if (data.text.length > 0) {
+      addActivity(`Received ${data.type === 'code' ? 'code' : 'text'} — ${data.text.length} chars`);
+      showToast('📥 Clipboard updated from another device');
+    }
 
     isIncoming = false;
   });
 
-  // Auto-sync as user types (debounced)
+  // ── Editor logic ──
   function onInput() {
     charCount.textContent = textArea.value.length;
-
     if (isIncoming) return;
-
-    // Show syncing indicator
     syncIndicator.classList.add('visible');
     syncIndicator.textContent = 'typing...';
-
     clearTimeout(syncTimer);
-    syncTimer = setTimeout(() => {
-      syncToAll();
-    }, 800); // sync 800ms after user stops typing
+    syncTimer = setTimeout(syncToAll, 800);
   }
 
   function syncToAll() {
-    socket.emit('clipboard:update', {
-      text: textArea.value,
-      type: currentType
-    });
+    if (!currentRoom) return;
+    socket.emit('clipboard:update', { text: textArea.value, type: currentType });
     syncIndicator.textContent = 'synced ✓';
     setTimeout(() => syncIndicator.classList.remove('visible'), 2000);
     addActivity(`Sent ${currentType === 'code' ? 'code' : 'text'} — ${textArea.value.length} chars`);
@@ -633,11 +826,10 @@
     document.getElementById('btnText').classList.toggle('active', type === 'text');
     document.getElementById('btnCode').classList.toggle('active', type === 'code');
     document.getElementById('editorLabel').textContent = type === 'code' ? 'Code Snippet' : 'Plain Text';
-    textArea.style.fontFamily = type === 'code' ? "'JetBrains Mono', monospace" : "'Syne', sans-serif";
-    textArea.style.fontSize = type === 'code' ? '13.5px' : '15px';
+    textArea.classList.toggle('code-mode', type === 'code');
     textArea.placeholder = type === 'code'
-      ? '// Paste your code here...\nfunction hello() { return "world"; }'
-      : 'Start typing or paste something here... it will appear on all connected devices instantly.';
+      ? '// Paste your code here...'
+      : 'Start typing or paste something here...';
   }
 
   function clearAll() {
@@ -654,42 +846,23 @@
       const btn = document.getElementById('copyBtn');
       btn.textContent = 'Copied!';
       btn.classList.add('success');
-      setTimeout(() => {
-        btn.textContent = 'Copy';
-        btn.classList.remove('success');
-      }, 2000);
-    } catch {
-      showToast('❌ Copy failed');
-    }
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('success'); }, 2000);
+    } catch { showToast('❌ Copy failed'); }
   }
 
-  // Cmd/Ctrl+Enter to sync
   function handleKeydown(e) {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-      e.preventDefault();
-      sendNow();
-    }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); sendNow(); }
   }
 
   function addActivity(msg) {
-    const now = new Date();
-    const time = now.toTimeString().slice(0, 8);
-
-    // Remove placeholder
+    const time = new Date().toTimeString().slice(0, 8);
     const placeholder = activityList.querySelector('.activity-item');
-    if (placeholder && placeholder.querySelector('.time').textContent === '--:--:--') {
-      placeholder.remove();
-    }
-
+    if (placeholder && placeholder.querySelector('.time').textContent === '--:--:--') placeholder.remove();
     const item = document.createElement('div');
     item.className = 'activity-item';
     item.innerHTML = `<span class="time">${time}</span><span class="msg">${msg}</span>`;
     activityList.insertBefore(item, activityList.firstChild);
-
-    // Keep only last 10
-    while (activityList.children.length > 10) {
-      activityList.removeChild(activityList.lastChild);
-    }
+    while (activityList.children.length > 10) activityList.removeChild(activityList.lastChild);
   }
 
   function showToast(msg) {

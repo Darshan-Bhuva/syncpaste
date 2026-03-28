@@ -11,38 +11,89 @@ const io = new Server(server, {
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// In-memory shared state
-let sharedClipboard = {
-  text: '',
-  type: 'text', // 'text' or 'code'
-  updatedAt: null,
-  updatedBy: null
-};
+// In-memory rooms: { roomCode: { text, type, updatedAt, updatedBy, clients } }
+const rooms = {};
 
-let connectedClients = 0;
+function getRoom(code) {
+  if (!rooms[code]) {
+    rooms[code] = {
+      text: '',
+      type: 'text',
+      updatedAt: null,
+      updatedBy: null,
+      clients: 0
+    };
+  }
+  return rooms[code];
+}
+
+function cleanupRoom(code) {
+  if (rooms[code] && rooms[code].clients <= 0) {
+    delete rooms[code];
+  }
+}
 
 io.on('connection', (socket) => {
-  connectedClients++;
-  io.emit('clients', connectedClients);
+  let currentRoom = null;
 
-  // Send current clipboard to new connection
-  socket.emit('clipboard:sync', sharedClipboard);
+  // Join a room
+  socket.on('room:join', (code) => {
+    if (!code || typeof code !== 'string') return;
 
-  // When a client updates clipboard
+    const roomCode = code.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '').slice(0, 32);
+    if (!roomCode) return;
+
+    // Leave previous room
+    if (currentRoom) {
+      socket.leave(currentRoom);
+      if (rooms[currentRoom]) {
+        rooms[currentRoom].clients--;
+        io.to(currentRoom).emit('clients', rooms[currentRoom].clients);
+        cleanupRoom(currentRoom);
+      }
+    }
+
+    // Join new room
+    currentRoom = roomCode;
+    socket.join(roomCode);
+    const room = getRoom(roomCode);
+    room.clients++;
+
+    // Send current state to new joiner
+    socket.emit('clipboard:sync', {
+      text: room.text,
+      type: room.type,
+      updatedAt: room.updatedAt,
+      updatedBy: room.updatedBy
+    });
+
+    // Notify room of new client count
+    io.to(roomCode).emit('clients', room.clients);
+  });
+
+  // Clipboard update
   socket.on('clipboard:update', (data) => {
-    sharedClipboard = {
-      text: data.text || '',
-      type: data.type || 'text',
-      updatedAt: new Date().toISOString(),
-      updatedBy: socket.id.slice(0, 6)
-    };
-    // Broadcast to all OTHER clients
-    socket.broadcast.emit('clipboard:sync', sharedClipboard);
+    if (!currentRoom) return;
+    const room = getRoom(currentRoom);
+    room.text = data.text || '';
+    room.type = data.type || 'text';
+    room.updatedAt = new Date().toISOString();
+    room.updatedBy = socket.id.slice(0, 6);
+
+    socket.to(currentRoom).emit('clipboard:sync', {
+      text: room.text,
+      type: room.type,
+      updatedAt: room.updatedAt,
+      updatedBy: room.updatedBy
+    });
   });
 
   socket.on('disconnect', () => {
-    connectedClients--;
-    io.emit('clients', connectedClients);
+    if (currentRoom && rooms[currentRoom]) {
+      rooms[currentRoom].clients--;
+      io.to(currentRoom).emit('clients', rooms[currentRoom].clients);
+      cleanupRoom(currentRoom);
+    }
   });
 });
 
